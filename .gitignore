@@ -1,4 +1,10 @@
+# Gradle files to be ignored
 .gradle
 gradle/
 gradlew
 gradlew.bat
+
+# Intellij files to be ignored
+.idea/
+
+/out
