@@ -11,5 +11,7 @@ repositories {
 }
 
 dependencies {
+    implementation 'com.itextpdf:itext7-core:8.0.4'
+    implementation 'org.slf4j:slf4j-jdk14:2.0.13'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
 }
