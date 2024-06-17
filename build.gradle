@@ -1,10 +1,23 @@
 plugins {
     id 'java'
     id 'org.springframework.boot' version '3.2.5'
+    id 'io.spring.dependency-management' version '1.1.5'
 }
 
 group 'info.amytan.smartfile'
 version '1.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
 
 repositories {
     mavenCentral()
@@ -13,5 +26,14 @@ repositories {
 dependencies {
     implementation 'com.itextpdf:itext7-core:8.0.4'
     implementation 'org.slf4j:slf4j-jdk14:2.0.13'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
 }
