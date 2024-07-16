@@ -1,9 +1,11 @@
 package info.amytan.smartfile;
 
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.ErrorResponse;
@@ -25,7 +27,8 @@ public class CustomExceptionHandlerResolver extends DefaultHandlerExceptionResol
                                                HttpServletRequest request,
                                                HttpServletResponse response,
                                                @Nullable Object handler) throws IOException {
-        //super.handleErrorResponse(errorResponse, request, response, handler);
-        return new ModelAndView("redirect:/error");
+        HttpStatusCode statusCode = errorResponse.getStatusCode();
+        request.setAttribute(RequestDispatcher.ERROR_STATUS_CODE, statusCode.value());
+        return new ModelAndView("forward:/error");
     }
 }
