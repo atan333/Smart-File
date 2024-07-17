@@ -14,21 +14,21 @@ import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolv
 
 import java.io.IOException;
 
-@Component
-@Slf4j
-public class CustomExceptionHandlerResolver extends DefaultHandlerExceptionResolver {
-    @Override
-    public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE;
-    }
-
-    @Override
-    protected ModelAndView handleErrorResponse(ErrorResponse errorResponse,
-                                               HttpServletRequest request,
-                                               HttpServletResponse response,
-                                               @Nullable Object handler) throws IOException {
-        HttpStatusCode statusCode = errorResponse.getStatusCode();
-        request.setAttribute(RequestDispatcher.ERROR_STATUS_CODE, statusCode.value());
-        return new ModelAndView("forward:/error");
-    }
-}
+//@Component
+//@Slf4j
+//public class CustomExceptionHandlerResolver extends DefaultHandlerExceptionResolver {
+//    @Override
+//    public int getOrder() {
+//        return Ordered.HIGHEST_PRECEDENCE;
+//    }
+//
+//    @Override
+//    protected ModelAndView handleErrorResponse(ErrorResponse errorResponse,
+//                                               HttpServletRequest request,
+//                                               HttpServletResponse response,
+//                                               @Nullable Object handler) throws IOException {
+//        HttpStatusCode statusCode = errorResponse.getStatusCode();
+//        request.setAttribute(RequestDispatcher.ERROR_STATUS_CODE, statusCode.value());
+//        return new ModelAndView("forward:/error");
+//    }
+//}
