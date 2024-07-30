@@ -1,5 +1,10 @@
 package info.amytan.smartfile;
 
+import com.itextpdf.text.pdf.PdfReader;
+import com.itextpdf.text.pdf.parser.PdfReaderContentParser;
+import com.itextpdf.text.pdf.parser.SimpleTextExtractionStrategy;
+import com.itextpdf.text.pdf.parser.TextExtractionStrategy;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -17,6 +22,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.stream.Stream;
 
 @Service
+@Slf4j
 public class FileSystemStorageService implements StorageService {
     private final Path rootLocation;
 
@@ -38,6 +44,10 @@ public class FileSystemStorageService implements StorageService {
 
             if (!isPdf(file)) {
                 throw new StorageException("Your upload must be a PDF.");
+            }
+            else {
+                InputStream pdf = file.getInputStream();
+                parsePdf(pdf);
             }
 
             Path destinationFile = this.rootLocation.resolve(
@@ -118,5 +128,16 @@ public class FileSystemStorageService implements StorageService {
         else {
             return false;
         }
+    }
+
+    private void parsePdf(InputStream pdf) throws IOException {
+        PdfReader reader = new PdfReader(pdf);
+        PdfReaderContentParser parser = new PdfReaderContentParser(reader);
+        TextExtractionStrategy strategy;
+        for (int i = 1; i <= reader.getNumberOfPages(); i++) {
+            strategy = parser.processContent(i, new SimpleTextExtractionStrategy());
+            log.info(strategy.getResultantText());
+        }
+        reader.close();
     }
 }
