@@ -97,7 +97,6 @@ public class FileSystemStorageService implements StorageService {
             else {
                 throw new StorageFileNotFoundException(
                         "Could not read file: " + filename);
-
             }
         }
         catch (MalformedURLException e) {
@@ -137,7 +136,13 @@ public class FileSystemStorageService implements StorageService {
         for (int i = 1; i <= reader.getNumberOfPages(); i++) {
             strategy = parser.processContent(i, new SimpleTextExtractionStrategy());
             log.info(strategy.getResultantText());
+            elasticSearch(strategy.getResultantText());
         }
         reader.close();
+    }
+
+    private void elasticSearch(String pageContent) {
+        // TODO: implement this method
+        log.info("Saving to Elastic Search");
     }
 }
