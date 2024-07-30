@@ -36,6 +36,10 @@ public class FileSystemStorageService implements StorageService {
                 throw new StorageException("Failed to store an empty file.");
             }
 
+            if (!isPdf(file)) {
+                throw new StorageException("Your upload must be a PDF.");
+            }
+
             Path destinationFile = this.rootLocation.resolve(
                     Paths.get(file.getOriginalFilename()))
                     .normalize().toAbsolutePath();
@@ -106,4 +110,13 @@ public class FileSystemStorageService implements StorageService {
         }
     }
 
+    private boolean isPdf(MultipartFile file) {
+        String contentType = file.getContentType();
+        if (contentType.equals("application/pdf")) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
 }
