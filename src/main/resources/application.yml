@@ -6,4 +6,5 @@ spring:
       max-request-size: 128KB
 
 storage:
-  location: upload-dir
+  hostUrl: localhost:9200
+  indexName: smartfile

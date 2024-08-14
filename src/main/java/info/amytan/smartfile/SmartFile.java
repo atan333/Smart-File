@@ -32,12 +32,4 @@ public class SmartFile {
 //            e.printStackTrace();
 //        }
     }
-
-    @Bean
-    CommandLineRunner init(StorageService storageService) {
-        return (args) -> {
-            storageService.deleteAll();
-            storageService.init();
-        };
-    }
 }
