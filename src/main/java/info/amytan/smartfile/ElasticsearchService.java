@@ -1,11 +1,18 @@
 package info.amytan.smartfile;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import co.elastic.clients.transport.ElasticsearchTransport;
+import co.elastic.clients.transport.endpoints.BooleanResponse;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.parser.PdfReaderContentParser;
 import com.itextpdf.text.pdf.parser.SimpleTextExtractionStrategy;
 import com.itextpdf.text.pdf.parser.TextExtractionStrategy;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.HttpHost;
+import org.elasticsearch.client.RestClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -26,6 +33,7 @@ import java.util.stream.Stream;
 @Slf4j
 public class ElasticsearchService implements StorageService {
     private final StorageProperties storageProperties;
+    private RestClient restClient;
 
     @Autowired
     public ElasticsearchService(StorageProperties storageProperties) {
@@ -34,7 +42,24 @@ public class ElasticsearchService implements StorageService {
 
     @PostConstruct
     public void init() {
+        restClient = RestClient
+                .builder(HttpHost.create(storageProperties.getHostUrl()))
+                .build();
+
+        try (ElasticsearchTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper())) {
+            ElasticsearchClient esClient = new ElasticsearchClient(transport);
+            BooleanResponse resp = esClient.indices()
+                    .exists(builder -> builder.index(storageProperties.getIndexName()));
+            if (resp.value()) {
+                log.info("Index already exists");
+            } else {
+                //esClient.indices().create(); //TODO
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error occurred while creating index", e);
+        }
         // we need establish the connection
+        // indices().exists(ExistsRequest.of(e -> e.index("name_index")));
         // we also need create a index to hold the pages if there is no such index
     }
 
