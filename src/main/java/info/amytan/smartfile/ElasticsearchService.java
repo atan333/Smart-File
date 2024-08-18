@@ -14,20 +14,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
-import org.springframework.util.FileSystemUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.stream.Stream;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -46,21 +38,19 @@ public class ElasticsearchService implements StorageService {
                 .builder(HttpHost.create(storageProperties.getHostUrl()))
                 .build();
 
-        try (ElasticsearchTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper())) {
-            ElasticsearchClient esClient = new ElasticsearchClient(transport);
+        executeEsCommand(esClient -> {
             BooleanResponse resp = esClient.indices()
                     .exists(builder -> builder.index(storageProperties.getIndexName()));
             if (resp.value()) {
                 log.info("Index already exists");
             } else {
-                //esClient.indices().create(); //TODO
+                esClient.indices().create(c -> c
+                        .index(storageProperties.getIndexName())
+                );
+                log.info("Index created.");
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Error occurred while creating index", e);
-        }
-        // we need establish the connection
-        // indices().exists(ExistsRequest.of(e -> e.index("name_index")));
-        // we also need create a index to hold the pages if there is no such index
+            return true;
+        }, "Creating index.");
     }
 
     @Override
@@ -124,7 +114,29 @@ public class ElasticsearchService implements StorageService {
     }
 
     private void save(Page page) {
-        // TODO: implement this method
-        log.info("Saving to Elastic Search");
+        executeEsCommand(esClient -> {
+            esClient.update(u -> u
+                            .index(storageProperties.getIndexName())
+                            .id(UUID.randomUUID().toString())
+                            .upsert(page),
+                    Page.class
+            );
+            log.info("Saving to Elastic Search");
+            return true;
+        }, "Saving page");
+    }
+
+    private <T> T executeEsCommand(CheckedFunction<ElasticsearchClient, T> func, String message) {
+        try (ElasticsearchTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper())) {
+            ElasticsearchClient esClient = new ElasticsearchClient(transport);
+            return func.apply(esClient);
+        } catch (IOException e) {
+            throw new RuntimeException("Error occurred during es command execution: " + message, e);
+        }
+    }
+
+    @FunctionalInterface
+    public interface CheckedFunction<T, R> {
+        R apply(T t) throws IOException;
     }
 }
