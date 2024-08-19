@@ -10,6 +10,7 @@ import com.itextpdf.text.pdf.parser.PdfReaderContentParser;
 import com.itextpdf.text.pdf.parser.SimpleTextExtractionStrategy;
 import com.itextpdf.text.pdf.parser.TextExtractionStrategy;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
@@ -26,6 +27,8 @@ import java.util.UUID;
 public class ElasticsearchService implements StorageService {
     private final StorageProperties storageProperties;
     private RestClient restClient;
+    private ElasticsearchTransport transport;
+    private ElasticsearchClient esClient;
 
     @Autowired
     public ElasticsearchService(StorageProperties storageProperties) {
@@ -38,7 +41,9 @@ public class ElasticsearchService implements StorageService {
                 .builder(HttpHost.create(storageProperties.getHostUrl()))
                 .build();
 
-        executeEsCommand(esClient -> {
+        transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
+        esClient = new ElasticsearchClient(transport);
+        try {
             BooleanResponse resp = esClient.indices()
                     .exists(builder -> builder.index(storageProperties.getIndexName()));
             if (resp.value()) {
@@ -49,8 +54,32 @@ public class ElasticsearchService implements StorageService {
                 );
                 log.info("Index created.");
             }
-            return true;
-        }, "Creating index.");
+        } catch (Exception e) {
+            log.error("Creating ES index failed", e);
+            throw new RuntimeException("Creating ES index failed", e);
+        }
+//        executeEsCommand(esClient -> {
+//            BooleanResponse resp = esClient.indices()
+//                    .exists(builder -> builder.index(storageProperties.getIndexName()));
+//            if (resp.value()) {
+//                log.info("Index already exists");
+//            } else {
+//                esClient.indices().create(c -> c
+//                        .index(storageProperties.getIndexName())
+//                );
+//                log.info("Index created.");
+//            }
+//            return true;
+//        }, "Creating index.");
+    }
+
+    @PreDestroy
+    public void cleanUp() {
+        try {
+            transport.close();
+        } catch (Exception e) {
+            log.error("Error occurred while trying to close transport.");
+        }
     }
 
     @Override
@@ -104,6 +133,7 @@ public class ElasticsearchService implements StorageService {
         for (int i = 1; i <= reader.getNumberOfPages(); i++) {
             strategy = parser.processContent(i, new SimpleTextExtractionStrategy());
             Page page = Page.builder()
+                    .id(UUID.randomUUID().toString())
                     .filename(filename)
                     .pageNum(i)
                     .content(strategy.getResultantText())
@@ -114,23 +144,38 @@ public class ElasticsearchService implements StorageService {
     }
 
     private void save(Page page) {
-        executeEsCommand(esClient -> {
-            esClient.update(u -> u
-                            .index(storageProperties.getIndexName())
-                            .id(UUID.randomUUID().toString())
-                            .upsert(page),
-                    Page.class
+        try {
+            esClient.index(i -> i
+                    .index(storageProperties.getIndexName())
+                    .id(page.getId())
+                    .document(page)
             );
-            log.info("Saving to Elastic Search");
-            return true;
-        }, "Saving page");
+        } catch (Exception exp) {
+            log.error("Failed to index page: " + page.getFilename() + "/" + page.getId(), exp);
+            throw new RuntimeException("Failed to create page", exp);
+        }
+//        executeEsCommand(esClient -> {
+//            esClient.index(i -> i
+//                    .index(storageProperties.getIndexName())
+//                    .id(page.getId())
+//                    .document(page)
+//            );
+//            esClient.update(u -> u
+//                            .index(storageProperties.getIndexName())
+//                            .id(page.getId())
+//                            .upsert(page), Page.class
+//            );
+//            log.info("Saving to Elastic Search");
+//            return true;
+//        }, "Saving page");
     }
 
     private <T> T executeEsCommand(CheckedFunction<ElasticsearchClient, T> func, String message) {
         try (ElasticsearchTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper())) {
             ElasticsearchClient esClient = new ElasticsearchClient(transport);
             return func.apply(esClient);
-        } catch (IOException e) {
+        } catch (Exception e) {
+            log.error("ES Execution failed", e);
             throw new RuntimeException("Error occurred during es command execution: " + message, e);
         }
     }
