@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -88,6 +89,18 @@ public class ElasticsearchService implements StorageService {
         catch (IOException e) {
             throw new StorageException("Failed to store exception", e);
         }
+    }
+
+    @Override
+    public List<Page> search(String query) {
+        // Fake page lol
+        Page page = Page.builder()
+                .id(UUID.randomUUID().toString())
+                .filename("Testing")
+                .pageNum(1)
+                .content(query)
+                .build();
+        return List.of(page);
     }
 
     private boolean isPdf(MultipartFile file) {

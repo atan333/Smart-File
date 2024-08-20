@@ -1,5 +1,6 @@
 package info.amytan.smartfile;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -16,7 +17,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.io.IOException;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Controller
+@RequestMapping("/upload")
 public class FileUploadController {
 
     private final StorageService storageService;
@@ -26,12 +29,12 @@ public class FileUploadController {
         this.storageService = storageService;
     }
 
-    @GetMapping("/upload")
+    @GetMapping
     public String listUploadFiles(Model model) throws IOException {
         return "uploadForm";
     }
 
-    @PostMapping("/upload")
+    @PostMapping
     public String handleFileUpload(@RequestParam("file") MultipartFile file,
                                    RedirectAttributes redirectAttributes) {
         storageService.store(file);
