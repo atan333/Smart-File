@@ -1,0 +1,22 @@
+<html xmlns:th="https://www.thymeleaf.org">
+<body>
+<h1>Welcome to Smart File! </h1>
+
+<div>
+    <form method="POST" action="/">
+        <table>
+            <tr><td>Search here:</td><td><input type="text" name="query" /></td></tr>
+            <tr><td></td><td><input type="submit" value="Submit" /></td></tr>
+        </table>
+    </form>
+</div>
+
+<div>
+    <ul>
+        <li th:each="item : ${searchItems}">
+            <span th:text="${item}"></span>
+        </li>
+    </ul>
+</div>
+</body>
+</html>

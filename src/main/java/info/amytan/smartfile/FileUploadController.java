@@ -26,18 +26,18 @@ public class FileUploadController {
         this.storageService = storageService;
     }
 
-    @GetMapping("/")
+    @GetMapping("/upload")
     public String listUploadFiles(Model model) throws IOException {
         return "uploadForm";
     }
 
-    @PostMapping("/")
+    @PostMapping("/upload")
     public String handleFileUpload(@RequestParam("file") MultipartFile file,
                                    RedirectAttributes redirectAttributes) {
         storageService.store(file);
         redirectAttributes.addFlashAttribute("message",
                 "You successfully uploaded " + file.getOriginalFilename() + "!");
-        return "redirect:/";
+        return "redirect:/upload";
     }
 
     @ExceptionHandler(StorageFileNotFoundException.class)
