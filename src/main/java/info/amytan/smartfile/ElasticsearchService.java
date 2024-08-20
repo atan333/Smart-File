@@ -58,25 +58,13 @@ public class ElasticsearchService implements StorageService {
             log.error("Creating ES index failed", e);
             throw new RuntimeException("Creating ES index failed", e);
         }
-//        executeEsCommand(esClient -> {
-//            BooleanResponse resp = esClient.indices()
-//                    .exists(builder -> builder.index(storageProperties.getIndexName()));
-//            if (resp.value()) {
-//                log.info("Index already exists");
-//            } else {
-//                esClient.indices().create(c -> c
-//                        .index(storageProperties.getIndexName())
-//                );
-//                log.info("Index created.");
-//            }
-//            return true;
-//        }, "Creating index.");
     }
 
     @PreDestroy
     public void cleanUp() {
         try {
             transport.close();
+            log.info("Closing transport");
         } catch (Exception e) {
             log.error("Error occurred while trying to close transport.");
         }
@@ -96,20 +84,6 @@ public class ElasticsearchService implements StorageService {
                 InputStream pdf = file.getInputStream();
                 parsePdfAndSave(file.getOriginalFilename(), pdf);
             }
-
-//            Path destinationFile = this.rootLocation.resolve(
-//                    Paths.get(file.getOriginalFilename()))
-//                    .normalize().toAbsolutePath();
-//
-//            if (!destinationFile.getParent().equals
-//                    (this.rootLocation.toAbsolutePath())) {
-//                throw new StorageException("Cannot store file outside of current directory.");
-//            }
-//
-//            try (InputStream inputStream = file.getInputStream()) {
-//                Files.copy(inputStream, destinationFile,
-//                        StandardCopyOption.REPLACE_EXISTING);
-//            }
         }
         catch (IOException e) {
             throw new StorageException("Failed to store exception", e);
@@ -154,34 +128,5 @@ public class ElasticsearchService implements StorageService {
             log.error("Failed to index page: " + page.getFilename() + "/" + page.getId(), exp);
             throw new RuntimeException("Failed to create page", exp);
         }
-//        executeEsCommand(esClient -> {
-//            esClient.index(i -> i
-//                    .index(storageProperties.getIndexName())
-//                    .id(page.getId())
-//                    .document(page)
-//            );
-//            esClient.update(u -> u
-//                            .index(storageProperties.getIndexName())
-//                            .id(page.getId())
-//                            .upsert(page), Page.class
-//            );
-//            log.info("Saving to Elastic Search");
-//            return true;
-//        }, "Saving page");
-    }
-
-    private <T> T executeEsCommand(CheckedFunction<ElasticsearchClient, T> func, String message) {
-        try (ElasticsearchTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper())) {
-            ElasticsearchClient esClient = new ElasticsearchClient(transport);
-            return func.apply(esClient);
-        } catch (Exception e) {
-            log.error("ES Execution failed", e);
-            throw new RuntimeException("Error occurred during es command execution: " + message, e);
-        }
-    }
-
-    @FunctionalInterface
-    public interface CheckedFunction<T, R> {
-        R apply(T t) throws IOException;
     }
 }
