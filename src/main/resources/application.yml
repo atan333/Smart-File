@@ -2,8 +2,8 @@ server.error.whitelabel.enabled: false
 spring:
   servlet:
     multipart:
-      max-file-size: 2MB
-      max-request-size: 2MB
+      max-file-size: 100MB
+      max-request-size: 100MB
 
 storage:
   hostUrl: http://localhost:9200

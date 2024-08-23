@@ -1,6 +1,10 @@
 package info.amytan.smartfile;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
@@ -87,20 +91,32 @@ public class ElasticsearchService implements StorageService {
             }
         }
         catch (IOException e) {
-            throw new StorageException("Failed to store exception", e);
+            throw new StorageException("Exception: failed to store", e);
         }
     }
 
     @Override
     public List<Page> search(String query) {
-        // Fake page lol
-        Page page = Page.builder()
-                .id(UUID.randomUUID().toString())
-                .filename("Testing")
-                .pageNum(1)
-                .content(query)
-                .build();
-        return List.of(page);
+        try {
+            Query filenameMatch = Query.of(b -> b.match(
+                    MatchQuery.of(builder -> builder.field("filename").query(query))));
+            Query contentMatch = Query.of(b -> b.match(
+                    MatchQuery.of(builder -> builder.field("content").boost(2.0f).query(query))));
+
+            SearchResponse<Page> response = esClient.search(s -> s
+                            .index("smartfile")
+                            .query(q -> q.bool(b ->
+                                    b.should(filenameMatch, contentMatch)
+                            )),
+                    Page.class
+            );
+
+            List<Hit<Page>> hits = response.hits().hits();
+            return hits.stream().map(Hit::source).toList();
+        }
+        catch (Exception e) {
+            throw new StorageException("Exception thrown during search", e);
+        }
     }
 
     private boolean isPdf(MultipartFile file) {
