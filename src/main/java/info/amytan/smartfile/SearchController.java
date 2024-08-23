@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Controller
@@ -27,6 +29,9 @@ public class SearchController {
 
     @PostMapping
     public ModelAndView handleSearch(@RequestParam("query") String query) {
-        return new ModelAndView("searchForm", "searchItems", storageService.search(query));
+        Map<String, Object> model = new HashMap<>();
+        model.put("query", query);
+        model.put("searchItems", storageService.search(query));
+        return new ModelAndView("searchForm", model);
     }
 }
